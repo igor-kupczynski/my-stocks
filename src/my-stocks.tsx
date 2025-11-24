@@ -10,7 +10,14 @@ type Preferences = {
 
 type Item =
   | (Quote & { error?: undefined })
-  | { symbol: string; error: string; shortName?: undefined; regularMarketPrice?: undefined; regularMarketChange?: undefined; regularMarketChangePercent?: undefined };
+  | {
+      symbol: string;
+      error: string;
+      shortName?: undefined;
+      regularMarketPrice?: undefined;
+      regularMarketChange?: undefined;
+      regularMarketChangePercent?: undefined;
+    };
 
 export default function Command() {
   const preferences = getPreferenceValues<Preferences>();
@@ -69,14 +76,14 @@ export default function Command() {
         />
       ) : (
         items.map((item) => {
-          const hasError = (item as any).error;
+          const hasError = item.error;
           const price = hasError ? undefined : (item as Quote).regularMarketPrice;
           const ch = hasError ? undefined : (item as Quote).regularMarketChange;
           const chp = hasError ? undefined : (item as Quote).regularMarketChangePercent;
           const up = ch != null && ch >= 0;
           const color = up ? Color.Green : Color.Red;
           const arrow = up ? "▲" : "▼";
-          const subtitle = hasError ? (item as any).error : (item as Quote).shortName ?? "";
+          const subtitle = hasError ? item.error : ((item as Quote).shortName ?? "");
           const accessories = hasError
             ? [{ text: "Error" }]
             : [
@@ -89,7 +96,7 @@ export default function Command() {
               icon={hasError ? Icon.ExclamationMark : Icon.ChartLine}
               title={item.symbol}
               subtitle={subtitle}
-              accessories={accessories as any}
+              accessories={accessories}
               actions={
                 <ActionPanel>
                   <Action title="Open in Stocks" icon={Icon.AppWindow} onAction={() => openInStocks(item.symbol)} />

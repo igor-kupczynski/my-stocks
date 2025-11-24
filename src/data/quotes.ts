@@ -24,7 +24,7 @@ function isFresh(at: number) {
 export async function getQuote(symbol: string): Promise<Quote | { error: string; symbol: string }> {
   const cached = cache.get(symbol);
   if (cached && isFresh(cached.at)) {
-    const d = cached.data as any;
+    const d = cached.data;
     return { ...d, symbol };
   }
   try {
@@ -38,7 +38,7 @@ export async function getQuote(symbol: string): Promise<Quote | { error: string;
     };
     cache.set(symbol, { data, at: Date.now() });
     return data;
-  } catch (e: any) {
+  } catch {
     const err = { error: "Invalid or unavailable symbol", symbol };
     cache.set(symbol, { data: err, at: Date.now() });
     return err;

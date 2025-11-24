@@ -1,6 +1,7 @@
 /**
  * @vitest-environment happy-dom
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, waitFor, cleanup } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as matchers from "@testing-library/jest-dom/matchers";
@@ -34,33 +35,45 @@ describe("Command Component", () => {
 
   it("renders empty state when no symbols configured", async () => {
     vi.mocked(getPreferenceValues).mockReturnValue({ stockSymbols: "" });
-    
+
     render(<Command />);
-    
+
     // Should show empty view immediately or after quick load
     await waitFor(() => {
       expect(screen.getByRole("status")).toHaveTextContent("No stocks configured");
     });
-    
+
     // Should not call getQuotes
     expect(QuotesData.getQuotes).not.toHaveBeenCalled();
   });
 
   it("fetches and displays stocks based on preferences", async () => {
     vi.mocked(getPreferenceValues).mockReturnValue({ stockSymbols: "AAPL, MSFT" });
-    
+
     const mockData = [
-      { symbol: "AAPL", regularMarketPrice: 150.0, regularMarketChange: 1.5, regularMarketChangePercent: 1.0, shortName: "Apple Inc." },
-      { symbol: "MSFT", regularMarketPrice: 300.0, regularMarketChange: -2.0, regularMarketChangePercent: -0.6, shortName: "Microsoft Corp." },
+      {
+        symbol: "AAPL",
+        regularMarketPrice: 150.0,
+        regularMarketChange: 1.5,
+        regularMarketChangePercent: 1.0,
+        shortName: "Apple Inc.",
+      },
+      {
+        symbol: "MSFT",
+        regularMarketPrice: 300.0,
+        regularMarketChange: -2.0,
+        regularMarketChangePercent: -0.6,
+        shortName: "Microsoft Corp.",
+      },
     ];
-    
+
     vi.mocked(QuotesData.getQuotes).mockResolvedValue(mockData);
 
     render(<Command />);
 
     // Expect parsing to happen
     expect(QuotesData.getQuotes).toHaveBeenCalledWith(["AAPL", "MSFT"]);
-    
+
     await waitFor(() => {
       const items = screen.getAllByRole("listitem");
       expect(items).toHaveLength(2);
@@ -72,10 +85,8 @@ describe("Command Component", () => {
 
   it("handles errors for individual stocks", async () => {
     vi.mocked(getPreferenceValues).mockReturnValue({ stockSymbols: "INVALID" });
-    
-    vi.mocked(QuotesData.getQuotes).mockResolvedValue([
-      { symbol: "INVALID", error: "Invalid symbol" } as any
-    ]);
+
+    vi.mocked(QuotesData.getQuotes).mockResolvedValue([{ symbol: "INVALID", error: "Invalid symbol" } as any]);
 
     render(<Command />);
 
