@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from "vitest";
 import { parseSymbols } from "../../utils/symbols";
 
@@ -6,7 +5,7 @@ describe("parseSymbols", () => {
   it("returns empty array for empty or undefined", () => {
     expect(parseSymbols("")).toEqual([]);
     expect(parseSymbols(undefined)).toEqual([]);
-    expect(parseSymbols(null as any)).toEqual([]);
+    expect(parseSymbols(null)).toEqual([]);
   });
 
   it("trims, uppercases, and filters empties", () => {

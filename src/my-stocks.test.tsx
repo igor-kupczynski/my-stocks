@@ -1,7 +1,6 @@
 /**
  * @vitest-environment happy-dom
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, waitFor, cleanup } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as matchers from "@testing-library/jest-dom/matchers";
@@ -86,7 +85,7 @@ describe("Command Component", () => {
   it("handles errors for individual stocks", async () => {
     vi.mocked(getPreferenceValues).mockReturnValue({ stockSymbols: "INVALID" });
 
-    vi.mocked(QuotesData.getQuotes).mockResolvedValue([{ symbol: "INVALID", error: "Invalid symbol" } as any]);
+    vi.mocked(QuotesData.getQuotes).mockResolvedValue([{ symbol: "INVALID", error: "Invalid symbol" }]);
 
     render(<Command />);
 

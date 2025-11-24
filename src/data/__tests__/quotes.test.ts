@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getQuotes, clearQuotesCache } from "../quotes";
 
@@ -47,8 +46,9 @@ describe("getQuotes", () => {
 
     const results = await getQuotes(["INVALID"]);
     expect(results).toHaveLength(1);
-    expect((results[0] as any).error).toBe("Invalid or unavailable symbol");
-    expect((results[0] as any).symbol).toBe("INVALID");
+    const result = results[0] as { error: string; symbol: string };
+    expect(result.error).toBe("Invalid or unavailable symbol");
+    expect(result.symbol).toBe("INVALID");
   });
 
   it("caches results", async () => {
