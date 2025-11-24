@@ -18,7 +18,18 @@
       "name": "my-stocks",
       "title": "My Stocks",
       "description": "View you stocks watchlist",
-      "mode": "view"
+      "mode": "view",
+      "preferences": [
+        {
+          "name": "stockSymbols",
+          "type": "textfield",
+          "title": "Stock Symbols",
+          "description": "Comma-separated list of stock symbols (e.g., AAPL, GOOGL, MSFT)",
+          "placeholder": "AAPL, GOOGL, MSFT, TSLA",
+          "required": false,
+          "default": "AAPL, GOOGL, MSFT, TSLA"
+        }
+      ]
     }
   ],
   "dependencies": {
@@ -28,17 +39,23 @@
   },
   "devDependencies": {
     "@raycast/eslint-config": "^2.0.4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "22.13.10",
     "@types/react": "19.0.10",
     "eslint": "^9.22.0",
+    "happy-dom": "^20.0.10",
     "prettier": "^3.5.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^2.1.8"
   },
   "scripts": {
     "build": "ray build",
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1",
     "publish": "npx @raycast/api@latest publish"
   }
