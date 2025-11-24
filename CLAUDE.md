@@ -4,63 +4,71 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Raycast extension called "My Stocks" that displays a watchlist of stocks with current prices and daily performance. The extension mimics the sidebar of macOS Stocks app and is built using the Raycast Extensions API with React and TypeScript.
+A Raycast extension that displays a stock watchlist with real-time prices and daily performance. Built with React, TypeScript, and the Raycast Extensions API, fetching market data from Yahoo Finance.
 
 ## Development Commands
 
 ### Build and Development
-- `npm run dev` - Run extension in development mode with hot reload via Raycast
+- `npm run dev` - Run extension in development mode with hot reload in Raycast
 - `npm run build` - Build the extension using `ray build`
 
+### Testing
+- `npm test` - Run all tests once with Vitest
+- `npm run test:watch` - Run tests in watch mode
+- Tests use `happy-dom` environment and mock `@raycast/api` via `vitest.config.ts` alias
+
 ### Code Quality
-- `npm run lint` - Run ESLint using `ray lint`
+- `npm run lint` - Run ESLint and Prettier via `ray lint`
 - `npm run fix-lint` - Auto-fix linting issues using `ray lint --fix`
 
 ### Publishing
-- `npm run publish` - Publish to Raycast Store (uses `@raycast/api` publisher)
+- `npm run publish` - Publish to Raycast Store (NOT npm)
 
 ## Architecture
 
 ### Tech Stack
 - **Framework**: Raycast Extensions API (React + TypeScript)
-- **Market Data**: `yahoo-finance2` npm package for fetching stock prices
-- **Type Safety**: Strict TypeScript with CommonJS modules targeting ES2023
+- **Market Data**: `yahoo-finance2` npm package
+- **Testing**: Vitest with Testing Library and happy-dom
+- **Type Safety**: Strict TypeScript, CommonJS modules, ES2023 target
 
-### Project Structure
-- `src/my-stocks.tsx` - Main command component (currently contains placeholder code)
-- `package.json` - Extension manifest with commands, dependencies, and scripts
-- `raycast-env.d.ts` - Auto-generated type definitions from manifest (do not edit manually)
-- `tsconfig.json` - TypeScript configuration with strict mode enabled
-- `eslint.config.js` - ESLint configuration using Raycast's config
-- `docs/raycast-stocks-extension-brief.md` - Detailed specification for the extension
+### Code Organization
 
-### Extension Configuration
-The extension is configured in `package.json` under the Raycast schema:
-- Single command: "My Stocks" (`my-stocks`)
-- Mode: `view` (interactive list UI)
-- Platforms: macOS and Windows
+```
+src/
+├── my-stocks.tsx          # Main command component (List view with state management)
+├── data/
+│   └── quotes.ts          # Yahoo Finance data fetching with 1-minute cache
+├── utils/
+│   ├── symbols.ts         # Parse/dedupe comma-separated symbols
+│   └── refresher.ts       # Auto-refresh utility (runs callback immediately + periodic)
+└── test/
+    └── mocks/
+        └── raycast-api.tsx  # Mock Raycast API for testing
+```
 
-### Implementation Requirements (from brief)
+### Key Implementation Details
 
-**Core functionality to implement:**
-1. Display list of user-configured stock symbols (from preferences)
-2. For each stock, show:
-   - Symbol and company name
-   - Current price
-   - Daily change ($ and %)
-   - Visual indicator (green/red for positive/negative)
-3. Default action: Open stock in macOS Stocks app (`stocks://` URL scheme) or Yahoo Finance fallback
+**Data Flow:**
+1. User preferences (`stockSymbols`) → parsed by `parseSymbols()` → deduped/uppercased
+2. `getQuotes()` fetches from Yahoo Finance with 1-minute TTL cache per symbol
+3. `startRefresher()` auto-refreshes every 60 seconds (immediate + periodic)
+4. Component displays quotes in List with color-coded accessories (green ▲/red ▼)
 
-**Data fetching:**
-- Use `yahoo-finance2` to fetch: `symbol`, `shortName`, `regularMarketPrice`, `regularMarketChange`, `regularMarketChangePercent`
-- User preferences for stock symbols (comma-separated list)
-- Handle errors gracefully (invalid symbols, rate limits)
+**Error Handling:**
+- Invalid symbols return `{ symbol, error }` instead of throwing
+- Errors displayed inline with ExclamationMark icon
+- Graceful fallback: macOS Stocks app (`stocks://`) → Yahoo Finance web
 
-**Current state:**
-The `src/my-stocks.tsx` file contains only placeholder code with dummy items. The actual stock fetching and display logic needs to be implemented according to the specification in `docs/raycast-stocks-extension-brief.md`.
+**Raycast-Specific:**
+- `raycast-env.d.ts` is auto-generated from `package.json` manifest - edit the manifest, not this file
+- Extension preferences in `package.json` under `commands[].preferences`
+- Default symbols: AAPL, GOOGL, MSFT, TSLA
 
-## Raycast-Specific Notes
-- `raycast-env.d.ts` is auto-generated from `package.json` - modify the manifest instead
-- Use Raycast API components: `List`, `ActionPanel`, `Action`, etc. from `@raycast/api`
-- Extension preferences are defined in `package.json` and typed in `raycast-env.d.ts`
-- Test changes using `npm run dev` which launches the extension in Raycast's development mode
+### Testing
+
+Tests mock `@raycast/api` using path alias in `vitest.config.ts`. The mock renders React components as simple DOM elements with ARIA roles. When writing tests:
+- Mock `getPreferenceValues` to control input symbols
+- Mock `getQuotes` from `./data/quotes` to inject test data
+- Use `@testing-library/react` queries with roles: `listitem`, `status`
+- Avoid `any` type - use explicit types or type guards instead
