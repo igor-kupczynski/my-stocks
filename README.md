@@ -12,8 +12,8 @@ This is a Raycast extension that displays a stock watchlist with real-time price
 - **Real-time Data**: Displays current price, daily change (absolute and percentage).
 - **Visual Indicators**: Color-coded performance indicators (Green for positive, Red for negative).
 - **Quick Actions**:
-    - Open the selected stock in the native **macOS Stocks** app.
-    - Fallback to **Yahoo Finance** website if the Stocks app doesn't open.
+    - Open the selected stock in **Yahoo Finance** website.
+    - Copy the stock symbol to clipboard.
 - **Customizable**: Configure your own list of stock symbols via Raycast Preferences.
 
 ## Requirements

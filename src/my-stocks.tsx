@@ -1,4 +1,4 @@
-import { ActionPanel, Action, Icon, List, Color, getPreferenceValues, open } from "@raycast/api";
+import { ActionPanel, Action, Icon, List, Color, getPreferenceValues } from "@raycast/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseSymbols } from "./utils/symbols";
 import { getQuotes, Quote } from "./data/quotes";
@@ -53,14 +53,6 @@ export default function Command() {
     };
   }, [refresh]);
 
-  const openInStocks = useCallback(async (symbol: string) => {
-    try {
-      await open(`stocks://symbol=${encodeURIComponent(symbol)}`);
-    } catch {
-      await open(`https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}`);
-    }
-  }, []);
-
   const formatChange = (change?: number, percent?: number) => {
     if (change == null || percent == null) return "";
     const sign = change >= 0 ? "+" : "";
@@ -99,7 +91,6 @@ export default function Command() {
               accessories={accessories}
               actions={
                 <ActionPanel>
-                  <Action title="Open in Stocks" icon={Icon.AppWindow} onAction={() => openInStocks(item.symbol)} />
                   <Action.OpenInBrowser
                     title="Open in Yahoo Finance"
                     url={`https://finance.yahoo.com/quote/${encodeURIComponent(item.symbol)}`}

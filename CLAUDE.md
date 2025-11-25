@@ -58,7 +58,6 @@ src/
 **Error Handling:**
 - Invalid symbols return `{ symbol, error }` instead of throwing
 - Errors displayed inline with ExclamationMark icon
-- Graceful fallback: macOS Stocks app (`stocks://`) → Yahoo Finance web
 
 **Raycast-Specific:**
 - `raycast-env.d.ts` is auto-generated from `package.json` manifest - edit the manifest, not this file
