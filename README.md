@@ -52,6 +52,16 @@ npm test         # Run tests
 npm run lint     # Check code style
 ```
 
+### Pre-commit Hooks
+
+This project uses [Husky](https://typicode.github.io/husky/) to automatically run checks before each commit:
+
+- **Lint & auto-fix** all files
+- **Build** the extension (TypeScript compilation)
+- **Run tests** to catch breaking changes
+
+Hooks are automatically set up when you run `npm install`. If you need to bypass the hook (not recommended), use `git commit --no-verify`.
+
 ## License
 
 [MIT](LICENSE) © 2025 Igor Kupczyński
