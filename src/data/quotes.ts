@@ -7,9 +7,22 @@ const yahooFinance = new YahooFinance({
 export type Quote = {
   symbol: string;
   shortName?: string;
+  longName?: string;
   regularMarketPrice?: number;
   regularMarketChange?: number;
   regularMarketChangePercent?: number;
+  regularMarketDayHigh?: number;
+  regularMarketDayLow?: number;
+  regularMarketVolume?: number;
+  regularMarketOpen?: number;
+  regularMarketPreviousClose?: number;
+  regularMarketTime?: Date;
+  fiftyTwoWeekHigh?: number;
+  fiftyTwoWeekLow?: number;
+  marketCap?: number;
+  currency?: string;
+  exchange?: string;
+  quoteType?: string;
 };
 
 /** Discriminated union for quote fetch results */
@@ -36,9 +49,22 @@ export async function getQuote(symbol: string): Promise<QuoteResult> {
       data: {
         symbol: q.symbol ?? symbol,
         shortName: q.shortName,
+        longName: q.longName,
         regularMarketPrice: q.regularMarketPrice,
         regularMarketChange: q.regularMarketChange,
         regularMarketChangePercent: q.regularMarketChangePercent,
+        regularMarketDayHigh: q.regularMarketDayHigh,
+        regularMarketDayLow: q.regularMarketDayLow,
+        regularMarketVolume: q.regularMarketVolume,
+        regularMarketOpen: q.regularMarketOpen,
+        regularMarketPreviousClose: q.regularMarketPreviousClose,
+        regularMarketTime: q.regularMarketTime,
+        fiftyTwoWeekHigh: q.fiftyTwoWeekHigh,
+        fiftyTwoWeekLow: q.fiftyTwoWeekLow,
+        marketCap: q.marketCap,
+        currency: q.currency,
+        exchange: q.exchange,
+        quoteType: q.quoteType,
       },
     };
     cache.set(symbol, { result, at: Date.now() });

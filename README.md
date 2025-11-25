@@ -11,16 +11,16 @@ I wanted a fast way to check stock prices without opening a browser or app. Rayc
 ## Features
 
 - **Personal Watchlist** — Configure your own list of stock symbols
-- **Live Prices** — Current price and daily change from Yahoo Finance
-- **Visual Cues** — Green ▲ for gains, red ▼ for losses
-- **Quick Actions** — Open in Yahoo Finance or copy symbol to clipboard
+- **Live Prices** — Current price and daily % change from Yahoo Finance
+- **Visual Cues** — Green/red icons for gains/losses
+- **Detail Panel** — Toggle with `⌘D` to see day range, 52-week range, volume, market cap
+- **Quick Actions** — Open in Yahoo Finance, copy symbol or price
 
 ## Installation
 
 ### From Raycast Store
 
-🚧 Comming soon
-
+🚧 Coming soon
 
 ### From Source
 

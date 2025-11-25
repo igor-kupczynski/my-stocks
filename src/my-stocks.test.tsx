@@ -80,14 +80,10 @@ describe("Command Component", () => {
       expect(item).toHaveTextContent("Apple Inc.");
       // Verify price formatting with $ and 2 decimal places
       expect(item).toHaveTextContent("$150.50");
-      // Verify positive change with + sign and arrow
-      expect(item).toHaveTextContent("+1.50");
+      // Verify positive percent change
       expect(item).toHaveTextContent("+1.01%");
-      expect(item).toHaveTextContent("▲");
       // Verify green color for positive change
       expect(item).toHaveTextContent("[green]");
-      // Verify correct icon
-      expect(item).toHaveAttribute("data-icon", "icon-line-chart");
     });
   });
 
@@ -113,17 +109,14 @@ describe("Command Component", () => {
       const item = screen.getByRole("listitem");
       // Verify price
       expect(item).toHaveTextContent("$300.00");
-      // Verify negative change (no + sign)
-      expect(item).toHaveTextContent("-5.25");
+      // Verify negative percent change
       expect(item).toHaveTextContent("-1.72%");
-      // Verify down arrow
-      expect(item).toHaveTextContent("▼");
       // Verify red color for negative change
       expect(item).toHaveTextContent("[red]");
     });
   });
 
-  it("handles zero change as positive (green, up arrow)", async () => {
+  it("handles zero change as neutral", async () => {
     vi.mocked(getPreferenceValues).mockReturnValue({ stockSymbols: "FLAT" });
 
     vi.mocked(QuotesData.getQuotes).mockResolvedValue([
@@ -144,8 +137,7 @@ describe("Command Component", () => {
     await waitFor(() => {
       const item = screen.getByRole("listitem");
       expect(item).toHaveTextContent("+0.00");
-      expect(item).toHaveTextContent("▲");
-      expect(item).toHaveTextContent("[green]");
+      expect(item).toHaveTextContent("$100.00");
     });
   });
 
@@ -167,8 +159,8 @@ describe("Command Component", () => {
     await waitFor(() => {
       const item = screen.getByRole("listitem");
       expect(item).toHaveTextContent("NODATA");
-      // Should show dash for missing price
-      expect(item).toHaveTextContent("-");
+      // Should show em dash for missing price
+      expect(item).toHaveTextContent("—");
     });
   });
 
@@ -210,9 +202,8 @@ describe("Command Component", () => {
       const item = screen.getByRole("listitem");
       expect(item).toHaveTextContent("INVALID");
       expect(item).toHaveTextContent("Invalid or unavailable symbol");
-      expect(item).toHaveTextContent("Error");
-      // Verify error icon
-      expect(item).toHaveAttribute("data-icon", "icon-error");
+      // Verify error icon is set (now as a JSON object)
+      expect(item.getAttribute("data-icon")).toContain("icon-error");
     });
   });
 
@@ -245,7 +236,7 @@ describe("Command Component", () => {
     });
   });
 
-  it("provides copy to clipboard action with symbol", async () => {
+  it("provides copy to clipboard actions", async () => {
     vi.mocked(getPreferenceValues).mockReturnValue({ stockSymbols: "AAPL" });
 
     vi.mocked(QuotesData.getQuotes).mockResolvedValue([
@@ -258,8 +249,48 @@ describe("Command Component", () => {
     render(<Command />);
 
     await waitFor(() => {
-      const copyButton = screen.getByTestId("copy-to-clipboard");
-      expect(copyButton).toHaveAttribute("data-content", "AAPL");
+      const copyButtons = screen.getAllByTestId("copy-to-clipboard");
+      // Should have both Copy Symbol and Copy Price actions
+      expect(copyButtons).toHaveLength(2);
+      expect(copyButtons[0]).toHaveAttribute("data-content", "AAPL");
+      expect(copyButtons[1]).toHaveAttribute("data-content", "150.00");
+    });
+  });
+
+  it("shows detail panel with stock metadata", async () => {
+    vi.mocked(getPreferenceValues).mockReturnValue({ stockSymbols: "AAPL" });
+
+    vi.mocked(QuotesData.getQuotes).mockResolvedValue([
+      {
+        ok: true as const,
+        data: {
+          symbol: "AAPL",
+          shortName: "Apple Inc.",
+          longName: "Apple Inc.",
+          regularMarketPrice: 150.5,
+          regularMarketChange: 1.5,
+          regularMarketChangePercent: 1.01,
+          regularMarketOpen: 149.0,
+          regularMarketDayHigh: 151.0,
+          regularMarketDayLow: 148.5,
+          marketCap: 2500000000000,
+          exchange: "NASDAQ",
+        },
+      },
+    ]);
+
+    render(<Command />);
+
+    await waitFor(() => {
+      // Check for detail panel elements
+      expect(screen.getByTestId("list-item-detail")).toBeInTheDocument();
+      expect(screen.getByTestId("detail-metadata")).toBeInTheDocument();
+      // Check for metadata content (day trading info)
+      const metadata = screen.getByTestId("detail-metadata");
+      expect(metadata).toHaveTextContent("Open");
+      expect(metadata).toHaveTextContent("$149.00");
+      expect(metadata).toHaveTextContent("High");
+      expect(metadata).toHaveTextContent("$151.00");
     });
   });
 });

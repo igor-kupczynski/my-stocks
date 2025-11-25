@@ -1,91 +1,50 @@
 # AGENTS.md
 
-This file provides guidance to AI coding assistants when working with code in this repository.
+Guidance for AI coding assistants working with this repository.
 
 ## Project Overview
 
-A Raycast extension that displays a stock watchlist with real-time prices and daily performance. Built with React, TypeScript, and the Raycast Extensions API, fetching market data from Yahoo Finance.
+Raycast extension displaying a stock watchlist with real-time prices. Built with React, TypeScript, and the Raycast Extensions API, fetching data from Yahoo Finance.
 
-## Development Commands
+## Commands
 
-### Setup
-1. Ensure you have Node.js installed
-2. Run `npm install` to install dependencies
-
-### Build and Development
-- `npm run dev` - Run extension in development mode with hot reload in Raycast
-- `npm run build` - Build the extension using `ray build`
-
-### Testing
-- `npm test` - Run all tests once with Vitest
-- `npm run test:coverage` - Run tests with coverage report
-- `npm run test:watch` - Run tests in watch mode
-- Tests use `happy-dom` environment and mock `@raycast/api` via `vitest.config.ts` alias
-
-### Code Quality
-- `npm run lint` - Run ESLint and Prettier via `ray lint`
-- `npm run fix-lint` - Auto-fix linting issues using `ray lint --fix`
-
-### Publishing
-- `npm run publish` - Publish to Raycast Store (NOT npm)
+```bash
+npm install          # Setup
+npm run dev          # Dev mode with hot reload
+npm run build        # Build extension
+npm test             # Run tests
+npm run lint         # Check code style
+npm run fix-lint     # Auto-fix lint issues
+```
 
 ## Architecture
 
-### Tech Stack
-- **Framework**: Raycast Extensions API (React + TypeScript)
-- **Market Data**: `yahoo-finance2` npm package
-- **Testing**: Vitest with Testing Library and happy-dom
-- **Type Safety**: Strict TypeScript, CommonJS modules, ES2023 target
-
-### Code Organization
-
 ```
 src/
-├── my-stocks.tsx          # Main command component (List view with state management)
-├── data/
-│   └── quotes.ts          # Yahoo Finance data fetching with 1-minute cache
-├── utils/
-│   ├── symbols.ts         # Parse/dedupe comma-separated symbols
-│   └── refresher.ts       # Auto-refresh utility (runs callback immediately + periodic)
-└── test/
-    └── mocks/
-        └── raycast-api.tsx  # Mock Raycast API for testing
+├── my-stocks.tsx      # Main component: List view with toggleable detail panel
+├── data/quotes.ts     # Yahoo Finance fetching with 1-min cache
+├── utils/symbols.ts   # Parse comma-separated symbols
+├── utils/refresher.ts # Auto-refresh every 60s
+└── test/mocks/        # Raycast API mocks for testing
 ```
 
-### Key Implementation Details
-
-**Data Flow:**
-1. User preferences (`stockSymbols`) → parsed by `parseSymbols()` → deduped/uppercased
-2. `getQuotes()` fetches from Yahoo Finance with 1-minute TTL cache per symbol
-3. `startRefresher()` auto-refreshes every 60 seconds (immediate + periodic)
-4. Component displays quotes in List with color-coded accessories (green ▲/red ▼)
-
-**Error Handling:**
-- `QuoteResult` is a discriminated union: `{ ok: true, data: Quote } | { ok: false, symbol, error }`
-- Invalid symbols return error variant instead of throwing
-- Errors displayed inline with ExclamationMark icon
-
-**Raycast-Specific:**
-- `raycast-env.d.ts` is auto-generated from `package.json` manifest - edit the manifest, not this file
-- Extension preferences in `package.json` under `commands[].preferences`
-- Default symbols: AAPL, GOOGL, MSFT, TSLA
+**Key patterns:**
+- `QuoteResult` discriminated union: `{ ok: true, data } | { ok: false, symbol, error }`
+- Detail panel toggled via `⌘D` (hidden by default for full-width list)
+- Preferences in `package.json` under `commands[].preferences`
 
 ## Testing
 
-Tests mock `@raycast/api` using path alias in `vitest.config.ts`. The mock renders React components as simple DOM elements with ARIA roles and data attributes for assertions. Jest-dom matchers are configured globally via `src/test/setup.ts`.
-
-### Adding New Tests
-1. Create a file ending in `.test.ts` or `.test.tsx` in the `src` directory or a `__tests__` subdirectory
-2. Import testing utilities from `vitest` and `@testing-library/react`
-3. The `@raycast/api` module is already mocked globally - use `vi.mocked()` to customize return values
-
-### Testing Guidelines
-- Mock `getPreferenceValues` to control input symbols
-- Mock `getQuotes` from `./data/quotes` to inject test data
-- Use `@testing-library/react` queries with roles: `listitem`, `status`
-- Avoid `any` type - use explicit types or type guards instead
+- Tests mock `@raycast/api` via vitest alias
+- Mock `getPreferenceValues` and `getQuotes` to control test data
+- Use `@testing-library/react` with roles: `listitem`, `status`
 
 ## Code Style
-- **Strict TypeScript** mode is enabled (`strict: true` in `tsconfig.json`)
-- Follow existing code style enforced by ESLint and Prettier
-- Avoid using `any`; use explicit types
+
+- Strict TypeScript enabled
+- Avoid `any`; use explicit types
+- Follow existing patterns enforced by ESLint/Prettier
+
+## Documentation
+
+Keep `README.md` and `AGENTS.md` up to date when making significant changes, but keep them lean—document what's needed, not everything.
