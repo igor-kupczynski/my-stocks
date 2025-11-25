@@ -18,6 +18,7 @@ A Raycast extension that displays a stock watchlist with real-time prices and da
 
 ### Testing
 - `npm test` - Run all tests once with Vitest
+- `npm run test:coverage` - Run tests with coverage report
 - `npm run test:watch` - Run tests in watch mode
 - Tests use `happy-dom` environment and mock `@raycast/api` via `vitest.config.ts` alias
 
@@ -60,7 +61,8 @@ src/
 4. Component displays quotes in List with color-coded accessories (green ▲/red ▼)
 
 **Error Handling:**
-- Invalid symbols return `{ symbol, error }` instead of throwing
+- `QuoteResult` is a discriminated union: `{ ok: true, data: Quote } | { ok: false, symbol, error }`
+- Invalid symbols return error variant instead of throwing
 - Errors displayed inline with ExclamationMark icon
 
 **Raycast-Specific:**
@@ -70,7 +72,7 @@ src/
 
 ## Testing
 
-Tests mock `@raycast/api` using path alias in `vitest.config.ts`. The mock renders React components as simple DOM elements with ARIA roles.
+Tests mock `@raycast/api` using path alias in `vitest.config.ts`. The mock renders React components as simple DOM elements with ARIA roles and data attributes for assertions. Jest-dom matchers are configured globally via `src/test/setup.ts`.
 
 ### Adding New Tests
 1. Create a file ending in `.test.ts` or `.test.tsx` in the `src` directory or a `__tests__` subdirectory

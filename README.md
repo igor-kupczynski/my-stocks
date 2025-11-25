@@ -1,108 +1,57 @@
 # My Stocks
 
-View your stock watchlist with current prices and daily performance directly in Raycast.
+A [Raycast](https://raycast.com) extension to track your stock watchlist at a glance.
 
-## Overview
+![My Stocks Screenshot](assets/my-stocks.png)
 
-This is a Raycast extension that displays a stock watchlist with real-time prices and daily performance. It is built with React, TypeScript, and the Raycast Extensions API, and fetches market data from Yahoo Finance.
+## Why?
+
+I wanted a fast way to check stock prices without opening a browser or app. Raycast is always a keystroke away, so it's the perfect place for a quick watchlist check.
 
 ## Features
 
-- **Watchlist**: View a list of user-configured stock symbols.
-- **Real-time Data**: Displays current price, daily change (absolute and percentage).
-- **Visual Indicators**: Color-coded performance indicators (Green for positive, Red for negative).
-- **Quick Actions**:
-    - Open the selected stock in **Yahoo Finance** website.
-    - Copy the stock symbol to clipboard.
-- **Customizable**: Configure your own list of stock symbols via Raycast Preferences.
-
-## Requirements
-
-- **Node.js**: Required for development and building.
-- **Raycast**: The application where this extension runs.
+- **Personal Watchlist** — Configure your own list of stock symbols
+- **Live Prices** — Current price and daily change from Yahoo Finance
+- **Visual Cues** — Green ▲ for gains, red ▼ for losses
+- **Quick Actions** — Open in Yahoo Finance or copy symbol to clipboard
 
 ## Installation
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/igor-kupczynski/my-stocks.git
-    cd my-stocks
-    ```
+### From Raycast Store
 
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
+🚧 Comming soon
 
-## Configuration
 
-To configure the stocks you want to watch:
-
-1.  Open Raycast Settings.
-2.  Go to **Extensions** > **My Stocks**.
-3.  Edit the **Stock Symbols** preference.
-    -   Format: Comma-separated list of symbols (e.g., `AAPL, GOOGL, MSFT, TSLA`).
-    -   Default: `AAPL, GOOGL, MSFT, TSLA`.
-
-## Development
-
-### Running in Development Mode
-
-Start the extension in development mode with hot reloading:
+### From Source
 
 ```bash
+git clone https://github.com/igor-kupczynski/my-stocks.git
+cd my-stocks
+npm install
 npm run dev
 ```
 
-### Building for Production
+## Configuration
 
-Build the extension for distribution:
+Open Raycast Settings → Extensions → My Stocks → **Stock Symbols**
+
+Enter a comma-separated list of symbols:
+```
+AAPL, GOOGL, MSFT, ^GSPC, BTC-USD
+```
+
+Supports stocks, ETFs, indices (`^GSPC`), crypto (`BTC-USD`), and forex (`EURUSD=X`).
+
+## Development
+
+See [AGENTS.md](AGENTS.md) for development commands and architecture details.
 
 ```bash
-npm run build
+npm run dev      # Start in Raycast with hot reload
+npm test         # Run tests
+npm run lint     # Check code style
 ```
-
-### Linting
-
-Check and fix code style issues:
-
-```bash
-npm run lint      # Check
-npm run fix-lint  # Auto-fix
-```
-
-### Testing
-
-Run the test suite using Vitest:
-
-```bash
-npm test          # Run once
-npm run test:watch # Run in watch mode
-```
-
-## Project Structure
-
-```text
-src/
-├── my-stocks.tsx          # Main command component (List view with state management)
-├── data/
-│   └── quotes.ts          # Yahoo Finance data fetching with 1-minute cache
-├── utils/
-│   ├── symbols.ts         # Parse/dedupe comma-separated symbols
-│   └── refresher.ts       # Auto-refresh utility
-└── test/
-    └── mocks/
-        └── raycast-api.tsx  # Mock Raycast API for testing
-```
-
-## Tech Stack
-
--   **Runtime**: Node.js
--   **Framework**: Raycast Extensions API (React + TypeScript)
--   **Language**: TypeScript
--   **Data Source**: `yahoo-finance2`
--   **Testing**: Vitest, React Testing Library, Happy DOM
 
 ## License
 
-MIT
+[MIT](LICENSE) © 2025 Igor Kupczyński
