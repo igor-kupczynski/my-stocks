@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "my-stocks",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "title": "My Stocks",
   "description": "View your stock watchlist with current prices and daily performance",
   "icon": "extension-icon.png",
