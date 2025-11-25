@@ -35,21 +35,10 @@ function formatLargeNumber(value: number | undefined): string {
   return value.toFixed(0);
 }
 
-function formatVolume(value: number | undefined): string {
-  if (value == null) return "—";
-  return value.toLocaleString("en-US");
-}
-
 function formatPercentChange(percent?: number): string {
   if (percent == null) return "";
   const sign = percent >= 0 ? "+" : "";
   return `${sign}${percent.toFixed(2)}%`;
-}
-
-function formatPriceChange(change?: number, percent?: number): string {
-  if (change == null || percent == null) return "—";
-  const sign = change >= 0 ? "+" : "";
-  return `${sign}${change.toFixed(2)} (${sign}${percent.toFixed(2)}%)`;
 }
 
 function getPerformanceIndicator(change?: number): { icon: Icon; tintColor: Color } {
@@ -81,7 +70,10 @@ function StockDetail({ data }: { data: Quote }) {
           <List.Item.Detail.Metadata.Label title="Open" text={formatCurrency(data.regularMarketOpen, currency)} />
           <List.Item.Detail.Metadata.Label title="High" text={formatCurrency(data.regularMarketDayHigh, currency)} />
           <List.Item.Detail.Metadata.Label title="Low" text={formatCurrency(data.regularMarketDayLow, currency)} />
-          <List.Item.Detail.Metadata.Label title="Close" text={formatCurrency(data.regularMarketPreviousClose, currency)} />
+          <List.Item.Detail.Metadata.Label
+            title="Close"
+            text={formatCurrency(data.regularMarketPreviousClose, currency)}
+          />
           <List.Item.Detail.Metadata.Separator />
           <List.Item.Detail.Metadata.Label title="52W High" text={formatCurrency(data.fiftyTwoWeekHigh, currency)} />
           <List.Item.Detail.Metadata.Label title="52W Low" text={formatCurrency(data.fiftyTwoWeekLow, currency)} />
@@ -148,26 +140,22 @@ export default function Command() {
                 icon={{ source: Icon.ExclamationMark, tintColor: Color.Red }}
                 title={item.symbol}
                 subtitle={item.error}
-                detail={
-                  <List.Item.Detail
-                    markdown={`# ${item.symbol}\n\n⚠️ **Error**: ${item.error}`}
-                  />
+                detail={<List.Item.Detail markdown={`# ${item.symbol}\n\n⚠️ **Error**: ${item.error}`} />}
+                actions={
+                  <ActionPanel>
+                    <Action.OpenInBrowser
+                      title="Open in Yahoo Finance"
+                      url={`https://finance.yahoo.com/quote/${encodeURIComponent(item.symbol)}`}
+                    />
+                    <Action
+                      title={showDetail ? "Hide Details" : "Show Details"}
+                      icon={Icon.Sidebar}
+                      onAction={toggleDetail}
+                      shortcut={{ modifiers: ["cmd"], key: "d" }}
+                    />
+                    <Action.CopyToClipboard title="Copy Symbol" content={item.symbol} />
+                  </ActionPanel>
                 }
-              actions={
-                <ActionPanel>
-                  <Action.OpenInBrowser
-                    title="Open in Yahoo Finance"
-                    url={`https://finance.yahoo.com/quote/${encodeURIComponent(item.symbol)}`}
-                  />
-                  <Action
-                    title={showDetail ? "Hide Details" : "Show Details"}
-                    icon={Icon.Sidebar}
-                    onAction={toggleDetail}
-                    shortcut={{ modifiers: ["cmd"], key: "d" }}
-                  />
-                  <Action.CopyToClipboard title="Copy Symbol" content={item.symbol} />
-                </ActionPanel>
-              }
               />
             );
           }

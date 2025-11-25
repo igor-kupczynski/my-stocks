@@ -203,7 +203,7 @@ describe("Command Component", () => {
       expect(item).toHaveTextContent("INVALID");
       expect(item).toHaveTextContent("Invalid or unavailable symbol");
       // Verify error icon is set (now as a JSON object)
-      expect(item.getAttribute("data-icon")).toContain("icon-error");
+      expect(item).toHaveAttribute("data-icon", expect.stringContaining("icon-error"));
     });
   });
 
