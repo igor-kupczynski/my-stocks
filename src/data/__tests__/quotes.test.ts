@@ -32,11 +32,14 @@ describe("getQuotes", () => {
     const results = await getQuotes(["AAPL"]);
     expect(results).toHaveLength(1);
     expect(results[0]).toEqual({
-      symbol: "AAPL",
-      shortName: "Apple Inc.",
-      regularMarketPrice: 150,
-      regularMarketChange: 1.5,
-      regularMarketChangePercent: 1.0,
+      ok: true,
+      data: {
+        symbol: "AAPL",
+        shortName: "Apple Inc.",
+        regularMarketPrice: 150,
+        regularMarketChange: 1.5,
+        regularMarketChangePercent: 1.0,
+      },
     });
     expect(mockQuote).toHaveBeenCalledWith("AAPL");
   });
@@ -46,9 +49,11 @@ describe("getQuotes", () => {
 
     const results = await getQuotes(["INVALID"]);
     expect(results).toHaveLength(1);
-    const result = results[0] as { error: string; symbol: string };
-    expect(result.error).toBe("Invalid or unavailable symbol");
-    expect(result.symbol).toBe("INVALID");
+    expect(results[0]).toEqual({
+      ok: false,
+      symbol: "INVALID",
+      error: "Invalid or unavailable symbol",
+    });
   });
 
   it("caches results", async () => {

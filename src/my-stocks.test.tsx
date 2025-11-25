@@ -3,12 +3,9 @@
  */
 import { render, screen, waitFor, cleanup } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import * as matchers from "@testing-library/jest-dom/matchers";
 import Command from "./my-stocks";
 import { getPreferenceValues } from "@raycast/api";
 import * as QuotesData from "./data/quotes";
-
-expect.extend(matchers);
 
 // Mock quotes data
 vi.mock("./data/quotes", () => ({
@@ -51,18 +48,24 @@ describe("Command Component", () => {
 
     const mockData = [
       {
-        symbol: "AAPL",
-        regularMarketPrice: 150.0,
-        regularMarketChange: 1.5,
-        regularMarketChangePercent: 1.0,
-        shortName: "Apple Inc.",
+        ok: true as const,
+        data: {
+          symbol: "AAPL",
+          regularMarketPrice: 150.0,
+          regularMarketChange: 1.5,
+          regularMarketChangePercent: 1.0,
+          shortName: "Apple Inc.",
+        },
       },
       {
-        symbol: "MSFT",
-        regularMarketPrice: 300.0,
-        regularMarketChange: -2.0,
-        regularMarketChangePercent: -0.6,
-        shortName: "Microsoft Corp.",
+        ok: true as const,
+        data: {
+          symbol: "MSFT",
+          regularMarketPrice: 300.0,
+          regularMarketChange: -2.0,
+          regularMarketChangePercent: -0.6,
+          shortName: "Microsoft Corp.",
+        },
       },
     ];
 
@@ -85,7 +88,9 @@ describe("Command Component", () => {
   it("handles errors for individual stocks", async () => {
     vi.mocked(getPreferenceValues).mockReturnValue({ stockSymbols: "INVALID" });
 
-    vi.mocked(QuotesData.getQuotes).mockResolvedValue([{ symbol: "INVALID", error: "Invalid symbol" }]);
+    vi.mocked(QuotesData.getQuotes).mockResolvedValue([
+      { ok: false as const, symbol: "INVALID", error: "Invalid symbol" },
+    ]);
 
     render(<Command />);
 

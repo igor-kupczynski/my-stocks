@@ -1,28 +1,17 @@
 import { ActionPanel, Action, Icon, List, Color, getPreferenceValues } from "@raycast/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseSymbols } from "./utils/symbols";
-import { getQuotes, Quote } from "./data/quotes";
+import { getQuotes, QuoteResult } from "./data/quotes";
 import { startRefresher } from "./utils/refresher";
 
 type Preferences = {
   stockSymbols?: string;
 };
 
-type Item =
-  | (Quote & { error?: undefined })
-  | {
-      symbol: string;
-      error: string;
-      shortName?: undefined;
-      regularMarketPrice?: undefined;
-      regularMarketChange?: undefined;
-      regularMarketChangePercent?: undefined;
-    };
-
 export default function Command() {
   const preferences = getPreferenceValues<Preferences>();
   const symbols = useMemo(() => parseSymbols(preferences.stockSymbols), [preferences.stockSymbols]);
-  const [items, setItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<QuoteResult[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const mounted = useRef(true);
 
@@ -36,7 +25,7 @@ export default function Command() {
     try {
       const results = await getQuotes(symbols);
       if (!mounted.current) return;
-      setItems(results as Item[]);
+      setItems(results);
     } finally {
       if (mounted.current) setLoading(false);
     }
@@ -68,34 +57,50 @@ export default function Command() {
         />
       ) : (
         items.map((item) => {
-          const hasError = item.error;
-          const price = hasError ? undefined : (item as Quote).regularMarketPrice;
-          const ch = hasError ? undefined : (item as Quote).regularMarketChange;
-          const chp = hasError ? undefined : (item as Quote).regularMarketChangePercent;
+          if (!item.ok) {
+            return (
+              <List.Item
+                key={item.symbol}
+                icon={Icon.ExclamationMark}
+                title={item.symbol}
+                subtitle={item.error}
+                accessories={[{ text: "Error" }]}
+                actions={
+                  <ActionPanel>
+                    <Action.OpenInBrowser
+                      title="Open in Yahoo Finance"
+                      url={`https://finance.yahoo.com/quote/${encodeURIComponent(item.symbol)}`}
+                    />
+                    <Action.CopyToClipboard title="Copy Symbol" content={item.symbol} />
+                  </ActionPanel>
+                }
+              />
+            );
+          }
+          const { data } = item;
+          const price = data.regularMarketPrice;
+          const ch = data.regularMarketChange;
+          const chp = data.regularMarketChangePercent;
           const up = ch != null && ch >= 0;
           const color = up ? Color.Green : Color.Red;
           const arrow = up ? "▲" : "▼";
-          const subtitle = hasError ? item.error : ((item as Quote).shortName ?? "");
-          const accessories = hasError
-            ? [{ text: "Error" }]
-            : [
-                { text: price != null ? `$${price.toFixed(2)}` : "-" },
-                { tag: { value: `${arrow} ${formatChange(ch, chp)}`, color } },
-              ];
           return (
             <List.Item
-              key={item.symbol}
-              icon={hasError ? Icon.ExclamationMark : Icon.ChartLine}
-              title={item.symbol}
-              subtitle={subtitle}
-              accessories={accessories}
+              key={data.symbol}
+              icon={Icon.LineChart}
+              title={data.symbol}
+              subtitle={data.shortName ?? ""}
+              accessories={[
+                { text: price != null ? `$${price.toFixed(2)}` : "-" },
+                { tag: { value: `${arrow} ${formatChange(ch, chp)}`, color } },
+              ]}
               actions={
                 <ActionPanel>
                   <Action.OpenInBrowser
                     title="Open in Yahoo Finance"
-                    url={`https://finance.yahoo.com/quote/${encodeURIComponent(item.symbol)}`}
+                    url={`https://finance.yahoo.com/quote/${encodeURIComponent(data.symbol)}`}
                   />
-                  <Action.CopyToClipboard title="Copy Symbol" content={item.symbol} />
+                  <Action.CopyToClipboard title="Copy Symbol" content={data.symbol} />
                 </ActionPanel>
               }
             />

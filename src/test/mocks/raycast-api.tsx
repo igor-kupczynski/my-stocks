@@ -53,5 +53,5 @@ export function Action(props: ActionProps) {
 Action.OpenInBrowser = () => null;
 Action.CopyToClipboard = () => null;
 
-export const Icon = { ChartLine: "icon-chart", ExclamationMark: "icon-error", AppWindow: "icon-app" };
+export const Icon = { LineChart: "icon-line-chart", ExclamationMark: "icon-error", AppWindow: "icon-app" };
 export const Color = { Green: "green", Red: "red" };

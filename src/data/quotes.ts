@@ -12,7 +12,10 @@ export type Quote = {
   regularMarketChangePercent?: number;
 };
 
-type CacheEntry = { data: Quote | { error: string }; at: number };
+/** Discriminated union for quote fetch results */
+export type QuoteResult = { ok: true; data: Quote } | { ok: false; symbol: string; error: string };
+
+type CacheEntry = { result: QuoteResult; at: number };
 
 const CACHE_TTL_MS = 60_000; // 1 minute
 const cache = new Map<string, CacheEntry>();
@@ -21,32 +24,41 @@ function isFresh(at: number) {
   return Date.now() - at < CACHE_TTL_MS;
 }
 
-export async function getQuote(symbol: string): Promise<Quote | { error: string; symbol: string }> {
+export async function getQuote(symbol: string): Promise<QuoteResult> {
   const cached = cache.get(symbol);
   if (cached && isFresh(cached.at)) {
-    const d = cached.data;
-    return { ...d, symbol };
+    return cached.result;
   }
   try {
     const q = await yahooFinance.quote(symbol);
-    const data: Quote = {
-      symbol: q.symbol ?? symbol,
-      shortName: q.shortName,
-      regularMarketPrice: q.regularMarketPrice,
-      regularMarketChange: q.regularMarketChange,
-      regularMarketChangePercent: q.regularMarketChangePercent,
+    const result: QuoteResult = {
+      ok: true,
+      data: {
+        symbol: q.symbol ?? symbol,
+        shortName: q.shortName,
+        regularMarketPrice: q.regularMarketPrice,
+        regularMarketChange: q.regularMarketChange,
+        regularMarketChangePercent: q.regularMarketChangePercent,
+      },
     };
-    cache.set(symbol, { data, at: Date.now() });
-    return data;
+    cache.set(symbol, { result, at: Date.now() });
+    return result;
   } catch {
-    const err = { error: "Invalid or unavailable symbol", symbol };
-    cache.set(symbol, { data: err, at: Date.now() });
-    return err;
+    const result: QuoteResult = { ok: false, symbol, error: "Invalid or unavailable symbol" };
+    cache.set(symbol, { result, at: Date.now() });
+    return result;
   }
 }
 
-export async function getQuotes(symbols: string[]): Promise<(Quote | { error: string; symbol: string })[]> {
-  return Promise.all(symbols.map((s) => getQuote(s)));
+export async function getQuotes(symbols: string[]): Promise<QuoteResult[]> {
+  const settled = await Promise.allSettled(symbols.map((s) => getQuote(s)));
+  return settled.map((result, i) => {
+    if (result.status === "fulfilled") {
+      return result.value;
+    }
+    // Should not happen since getQuote catches errors, but handle defensively
+    return { ok: false as const, symbol: symbols[i], error: "Unexpected error" };
+  });
 }
 
 export function clearQuotesCache() {
