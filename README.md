@@ -1,3 +1,5 @@
+<img src="assets/extension-icon.png" width="64" height="64" align="left" style="margin-right: 16px">
+
 # My Stocks
 
 A [Raycast](https://raycast.com) extension to track your stock watchlist at a glance.
