@@ -2,7 +2,9 @@
 
 A [Raycast](https://raycast.com) extension to track your stock watchlist at a glance.
 
-![My Stocks Screenshot](assets/my-stocks.png)
+![My Stocks List Screenshot](assets/my-stocks-list.png)
+
+![My Stocks Details Screenshot](assets/my-stocks-details.png)
 
 ## Why?
 
