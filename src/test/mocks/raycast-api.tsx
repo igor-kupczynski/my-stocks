@@ -46,6 +46,12 @@ interface ListProps {
   children?: ReactNode;
 }
 
+interface ListSectionProps {
+  title?: string;
+  subtitle?: string;
+  children?: ReactNode;
+}
+
 interface DetailMetadataProps {
   children?: ReactNode;
 }
@@ -80,12 +86,21 @@ interface ActionPanelProps {
   children?: ReactNode;
 }
 
+interface ActionPanelSubmenuProps {
+  title: string;
+  icon?: string | IconObject;
+  shortcut?: { modifiers: string[]; key: string };
+  children?: ReactNode;
+}
+
 interface ActionProps {
   title: string;
   url?: string;
   content?: string;
   shortcut?: { modifiers: string[]; key: string };
   onAction?: () => void;
+  icon?: string | IconObject;
+  style?: string;
 }
 
 function getIconValue(icon: string | IconObject | undefined): string {
@@ -126,6 +141,7 @@ type ListItemType = ((props: ListItemProps) => JSX.Element) & {
 type ListType = ((props: ListProps) => JSX.Element) & {
   Item: ListItemType;
   EmptyView: (props: ListEmptyViewProps) => JSX.Element;
+  Section: (props: ListSectionProps) => JSX.Element;
 };
 
 // Create ListItemDetail first (needed by List.Item)
@@ -218,25 +234,62 @@ export const List: ListType = Object.assign(
         {props.title} {props.description}
       </div>
     ),
+    Section: (props: ListSectionProps) => (
+      <div role="group" data-testid="list-section" data-title={props.title} data-subtitle={props.subtitle}>
+        {props.children}
+      </div>
+    ),
   },
 );
 
-export function ActionPanel(props: ActionPanelProps) {
-  return <div role="group">{props.children}</div>;
-}
+type ActionPanelType = ((props: ActionPanelProps) => JSX.Element) & {
+  Submenu: (props: ActionPanelSubmenuProps) => JSX.Element;
+};
 
-export function Action(props: ActionProps) {
-  return <button onClick={props.onAction}>{props.title}</button>;
-}
-Action.OpenInBrowser = (props: ActionProps) => (
-  <a href={props.url} data-testid="open-in-browser">
-    {props.title}
-  </a>
+export const ActionPanel: ActionPanelType = Object.assign(
+  (props: ActionPanelProps) => {
+    return <div role="group">{props.children}</div>;
+  },
+  {
+    Submenu: (props: ActionPanelSubmenuProps) => {
+      return (
+        <div data-testid="action-submenu" data-title={props.title}>
+          {props.children}
+        </div>
+      );
+    },
+  },
 );
-Action.CopyToClipboard = (props: ActionProps) => (
-  <button data-testid="copy-to-clipboard" data-content={props.content}>
-    {props.title}
-  </button>
+
+type ActionType = ((props: ActionProps) => JSX.Element) & {
+  OpenInBrowser: (props: ActionProps) => JSX.Element;
+  CopyToClipboard: (props: ActionProps) => JSX.Element;
+  Style: {
+    Default: string;
+    Destructive: string;
+  };
+};
+
+export const Action: ActionType = Object.assign(
+  (props: ActionProps) => {
+    return <button onClick={props.onAction}>{props.title}</button>;
+  },
+  {
+    OpenInBrowser: (props: ActionProps) => (
+      <a href={props.url} data-testid="open-in-browser">
+        {props.title}
+      </a>
+    ),
+    CopyToClipboard: (props: ActionProps) => (
+      <button data-testid="copy-to-clipboard" data-content={props.content}>
+        {props.title}
+      </button>
+    ),
+    Style: {
+      Default: "default",
+      Destructive: "destructive",
+    },
+  },
 );
 
 export const Icon = {
@@ -248,6 +301,11 @@ export const Icon = {
   MinusCircle: "icon-minus-circle",
   Minus: "icon-minus",
   BarChart: "icon-bar-chart",
+  Sidebar: "icon-sidebar",
+  ArrowUp: "icon-arrow-up",
+  ArrowDown: "icon-arrow-down",
+  List: "icon-list",
+  Trash: "icon-trash",
 };
 
 export const Color = {
@@ -256,3 +314,13 @@ export const Color = {
   PrimaryText: "primary-text",
   SecondaryText: "secondary-text",
 };
+
+export const Alert = {
+  ActionStyle: {
+    Default: "default",
+    Destructive: "destructive",
+    Cancel: "cancel",
+  },
+};
+
+export const confirmAlert = vi.fn(async () => true);
