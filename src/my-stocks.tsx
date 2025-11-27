@@ -171,9 +171,17 @@ export default function Command() {
       const list = lists.find((l) => l.id === listId);
       if (!list) return;
 
+      const item = list.symbols[symbolIndex];
+      const hasPosition = item.units !== undefined && item.units > 0;
+
+      let message = `Remove ${item.symbol} from ${list.name}?`;
+      if (hasPosition) {
+        message = `This will also delete your position data (${item.units} shares). This action cannot be undone.`;
+      }
+
       const confirmed = await confirmAlert({
         title: "Remove Stock",
-        message: `Remove ${list.symbols[symbolIndex].symbol} from ${list.name}?`,
+        message,
         primaryAction: {
           title: "Remove",
           style: Alert.ActionStyle.Destructive,
@@ -202,11 +210,35 @@ export default function Command() {
 
   return (
     <List isLoading={loading} isShowingDetail={showDetail} searchBarPlaceholder="Filter stocks...">
-      {totalStocks === 0 && !loading ? (
+      {!loading && lists.length === 0 ? (
+        <List.EmptyView
+          icon={Icon.List}
+          title="No lists yet"
+          description="Use the Manage Lists command to create your first list, then add stocks to track."
+          actions={
+            <ActionPanel>
+              <Action.Open
+                title="Open Manage Lists"
+                target="raycast://extensions/igor-kupczynski/my-stocks/manage-lists"
+                icon={Icon.List}
+              />
+            </ActionPanel>
+          }
+        />
+      ) : totalStocks === 0 && !loading ? (
         <List.EmptyView
           icon={Icon.BarChart}
           title="No stocks in your lists"
-          description="Use the Manage Lists command to create lists and add stocks."
+          description="Use the Add Stock command to add stocks to your lists."
+          actions={
+            <ActionPanel>
+              <Action.Open
+                title="Add Stock"
+                target="raycast://extensions/igor-kupczynski/my-stocks/add-stock"
+                icon={Icon.Plus}
+              />
+            </ActionPanel>
+          }
         />
       ) : (
         lists.map((list) => (

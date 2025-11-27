@@ -75,8 +75,8 @@ describe("Command Component", () => {
     render(<Command />);
 
     await waitFor(() => {
-      expect(screen.getByRole("status")).toHaveTextContent("No stocks in your lists");
-      expect(screen.getByRole("status")).toHaveTextContent("Use the Manage Lists command");
+      expect(screen.getByRole("status")).toHaveTextContent("No lists yet");
+      expect(screen.getByRole("status")).toHaveTextContent("Use the Manage Lists command to create your first list");
     });
 
     expect(QuotesData.getQuotes).not.toHaveBeenCalled();

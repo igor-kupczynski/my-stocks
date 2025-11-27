@@ -37,6 +37,18 @@
       "title": "Manage Lists",
       "description": "Create, edit, reorder, and delete stock lists",
       "mode": "view"
+    },
+    {
+      "name": "export-lists",
+      "title": "Export Lists",
+      "description": "Export all portfolio data to clipboard as JSON",
+      "mode": "no-view"
+    },
+    {
+      "name": "import-lists",
+      "title": "Import Lists",
+      "description": "Import portfolio data from clipboard",
+      "mode": "no-view"
     }
   ],
   "dependencies": {
