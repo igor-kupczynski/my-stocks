@@ -3,6 +3,26 @@ import { ReactNode } from "react";
 
 export const getPreferenceValues = vi.fn(() => ({}));
 export const open = vi.fn();
+export const showToast = vi.fn(async () => ({}));
+
+// LocalStorage mock
+const storage = new Map<string, string>();
+export const LocalStorage = {
+  getItem: vi.fn(async (key: string) => storage.get(key)),
+  setItem: vi.fn(async (key: string, value: string) => storage.set(key, value)),
+  removeItem: vi.fn(async (key: string) => storage.delete(key)),
+  clear: vi.fn(async () => storage.clear()),
+  allItems: vi.fn(async () => Object.fromEntries(storage)),
+};
+
+// Toast styles
+export const Toast = {
+  Style: {
+    Success: "success",
+    Failure: "failure",
+    Animated: "animated",
+  },
+};
 
 interface TextAccessory {
   value: string;
@@ -74,39 +94,7 @@ function getIconValue(icon: string | IconObject | undefined): string {
   return JSON.stringify(icon);
 }
 
-export function List(props: ListProps) {
-  return (
-    <div role="list" aria-label={props.searchBarPlaceholder} data-loading={props.isLoading}>
-      {props.children}
-    </div>
-  );
-}
-
-function ListItemDetail(props: DetailProps) {
-  return (
-    <div data-testid="list-item-detail">
-      {props.markdown && <div data-testid="detail-markdown">{props.markdown}</div>}
-      {props.metadata}
-    </div>
-  );
-}
-
-function DetailMetadata(props: DetailMetadataProps) {
-  return <div data-testid="detail-metadata">{props.children}</div>;
-}
-
-function DetailMetadataLabel(props: DetailMetadataLabelProps) {
-  return (
-    <div data-testid="metadata-label">
-      {props.title}: {props.text}
-    </div>
-  );
-}
-
-function DetailMetadataSeparator() {
-  return <hr data-testid="metadata-separator" />;
-}
-
+// Define types first
 interface TagListItemProps {
   text: string;
   color?: string;
@@ -117,58 +105,120 @@ interface TagListProps {
   children?: ReactNode;
 }
 
-function DetailMetadataTagList(props: TagListProps) {
-  return (
-    <div data-testid="metadata-taglist">
-      {props.title}: {props.children}
-    </div>
-  );
-}
-
-function DetailMetadataTagListItem(props: TagListItemProps) {
-  return (
-    <span data-testid="metadata-tag" data-color={props.color}>
-      [{props.color}]{props.text}
-    </span>
-  );
-}
-
-DetailMetadataTagList.Item = DetailMetadataTagListItem;
-
-ListItemDetail.Metadata = DetailMetadata;
-ListItemDetail.Metadata.Label = DetailMetadataLabel;
-ListItemDetail.Metadata.Separator = DetailMetadataSeparator;
-ListItemDetail.Metadata.TagList = DetailMetadataTagList;
-
-List.Item = (props: ListItemProps) => {
-  const accessoryText = props.accessories
-    ?.map((a) => {
-      if (a.text) {
-        if (typeof a.text === "string") return a.text;
-        // Text object with value and optional color
-        const color = a.text.color ?? "";
-        return color ? `[${color}]${a.text.value}` : a.text.value;
-      }
-      if (a.tag) return `[${a.tag.color}]${a.tag.value}`;
-      return "";
-    })
-    .join(" ");
-
-  return (
-    <div role="listitem" title={props.title} data-icon={getIconValue(props.icon)}>
-      {props.title} {props.subtitle} {accessoryText}
-      {props.detail}
-      {props.actions}
-    </div>
-  );
+type DetailMetadataTagListType = ((props: TagListProps) => JSX.Element) & {
+  Item: (props: TagListItemProps) => JSX.Element;
 };
 
-List.Item.Detail = ListItemDetail;
+type DetailMetadataType = ((props: DetailMetadataProps) => JSX.Element) & {
+  Label: (props: DetailMetadataLabelProps) => JSX.Element;
+  Separator: () => JSX.Element;
+  TagList: DetailMetadataTagListType;
+};
 
-List.EmptyView = (props: ListEmptyViewProps) => (
-  <div role="status" data-icon={getIconValue(props.icon)}>
-    {props.title} {props.description}
-  </div>
+type ListItemDetailType = ((props: DetailProps) => JSX.Element) & {
+  Metadata: DetailMetadataType;
+};
+
+type ListItemType = ((props: ListItemProps) => JSX.Element) & {
+  Detail: ListItemDetailType;
+};
+
+type ListType = ((props: ListProps) => JSX.Element) & {
+  Item: ListItemType;
+  EmptyView: (props: ListEmptyViewProps) => JSX.Element;
+};
+
+// Create ListItemDetail first (needed by List.Item)
+const ListItemDetail: ListItemDetailType = Object.assign(
+  (props: DetailProps) => {
+    return (
+      <div data-testid="list-item-detail">
+        {props.markdown && <div data-testid="detail-markdown">{props.markdown}</div>}
+        {props.metadata}
+      </div>
+    );
+  },
+  {
+    Metadata: Object.assign(
+      (props: DetailMetadataProps) => {
+        return <div data-testid="detail-metadata">{props.children}</div>;
+      },
+      {
+        Label: (props: DetailMetadataLabelProps) => {
+          return (
+            <div data-testid="metadata-label">
+              {props.title}: {props.text}
+            </div>
+          );
+        },
+        Separator: () => {
+          return <hr data-testid="metadata-separator" />;
+        },
+        TagList: Object.assign(
+          (props: TagListProps) => {
+            return (
+              <div data-testid="metadata-taglist">
+                {props.title}: {props.children}
+              </div>
+            );
+          },
+          {
+            Item: (props: TagListItemProps) => {
+              return (
+                <span data-testid="metadata-tag" data-color={props.color}>
+                  [{props.color}]{props.text}
+                </span>
+              );
+            },
+          },
+        ) as DetailMetadataTagListType,
+      },
+    ) as DetailMetadataType,
+  },
+);
+
+// Create List (uses ListItemDetail)
+export const List: ListType = Object.assign(
+  (props: ListProps) => {
+    return (
+      <div role="list" aria-label={props.searchBarPlaceholder} data-loading={props.isLoading}>
+        {props.children}
+      </div>
+    );
+  },
+  {
+    Item: Object.assign(
+      (props: ListItemProps) => {
+        const accessoryText = props.accessories
+          ?.map((a) => {
+            if (a.text) {
+              if (typeof a.text === "string") return a.text;
+              const color = a.text.color ?? "";
+              return color ? `[${color}]${a.text.value}` : a.text.value;
+            }
+            if (a.tag) return `[${a.tag.color}]${a.tag.value}`;
+            return "";
+          })
+          .join(" ");
+
+        return (
+          <div role="listitem" title={props.title} data-icon={getIconValue(props.icon)}>
+            {props.title} {props.subtitle} {accessoryText}
+            {props.detail}
+            {props.actions}
+          </div>
+        );
+      },
+      {
+        Detail: ListItemDetail,
+      },
+    ) as ListItemType,
+    EmptyView: (props: ListEmptyViewProps) => (
+      <div role="status" data-icon={getIconValue(props.icon)}>
+        {props.title} {props.description}
+      </div>
+    ),
+  },
 );
 
 export function ActionPanel(props: ActionPanelProps) {
