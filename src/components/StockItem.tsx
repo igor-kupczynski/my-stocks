@@ -1,6 +1,7 @@
 import { ActionPanel, Action, Icon, List, Color } from "@raycast/api";
 import type { Quote } from "../data/quotes";
 import type { ListItem } from "../types";
+import { EditPositionForm } from "./EditPositionForm";
 
 function formatNumber(value: number | undefined, decimals = 2): string {
   if (value == null) return "—";
@@ -66,6 +67,7 @@ interface StockItemProps {
   onMoveDown: () => void;
   onMoveToList: (targetListId: string) => void;
   onRemove: () => void;
+  onEditPosition: (units: number | undefined, costBasis: number | undefined) => void;
 }
 
 export function StockItem({
@@ -82,6 +84,7 @@ export function StockItem({
   onMoveDown,
   onMoveToList,
   onRemove,
+  onEditPosition,
 }: StockItemProps) {
   const currency = quote.currency ?? "USD";
   const price = quote.regularMarketPrice;
@@ -92,26 +95,26 @@ export function StockItem({
   // Portfolio-specific calculations
   const positionValue = isPortfolio && listItem.units && price != null ? listItem.units * price : undefined;
   const dayPL = isPortfolio && listItem.units && change != null && price != null ? listItem.units * change : undefined;
+  const unrealizedPL =
+    isPortfolio && listItem.units && listItem.costBasis != null && positionValue != null
+      ? positionValue - listItem.costBasis
+      : undefined;
+  const unrealizedPLPercent =
+    unrealizedPL != null && listItem.costBasis != null && listItem.costBasis !== 0
+      ? (unrealizedPL / listItem.costBasis) * 100
+      : undefined;
 
   // Build accessories based on mode
   const accessories: List.Item.Accessory[] = [];
 
-  if (isPortfolio && listItem.units != null) {
-    // Portfolio mode: show position info on second line
-    accessories.push(
-      { text: price != null ? `$${formatNumber(price)}` : "—" },
-      { tag: { value: formatPercentChange(changePercent), color: tintColor } },
-    );
-  } else {
-    // Watchlist mode: traditional display
-    accessories.push(
-      { text: price != null ? `$${formatNumber(price)}` : "—" },
-      { tag: { value: formatPercentChange(changePercent), color: tintColor } },
-    );
-  }
+  // Main price and change accessories
+  accessories.push(
+    { text: price != null ? `$${formatNumber(price)}` : "—" },
+    { tag: { value: formatPercentChange(changePercent), color: tintColor } },
+  );
 
   // Subtitle for portfolio mode
-  const subtitle = isPortfolio && listItem.units != null ? (quote.shortName ?? "") : (quote.shortName ?? "");
+  const subtitle = quote.shortName ?? "";
 
   const detailMarkdown = isPortfolio
     ? `# ${quote.symbol} — ${quote.shortName ?? ""}
@@ -122,6 +125,7 @@ export function StockItem({
 - **Position Value:** ${formatCurrency(positionValue, currency)}
 - **Day P&L:** ${formatCurrency(dayPL, currency)} (${formatPercentChange(changePercent)})
 ${listItem.costBasis != null ? `- **Cost Basis:** ${formatCurrency(listItem.costBasis, currency)}` : ""}
+${unrealizedPL != null && unrealizedPLPercent != null ? `- **Unrealized P&L:** ${unrealizedPL >= 0 ? "+" : ""}${formatCurrency(Math.abs(unrealizedPL), currency)} (${unrealizedPL >= 0 ? "+" : ""}${unrealizedPLPercent.toFixed(2)}%)` : ""}
 
 ## Market Data
 - **As of:** ${formatMarketTime(quote.regularMarketTime)}
@@ -142,17 +146,19 @@ ${listItem.costBasis != null ? `- **Cost Basis:** ${formatCurrency(listItem.cost
       title={quote.symbol}
       subtitle={subtitle}
       accessories={
-        isPortfolio && listItem.units != null
-          ? [
-              ...accessories,
-              {
-                text: `${listItem.units} shares · ${formatCurrency(positionValue, currency)}`,
-              },
-              {
-                text: `Day: ${formatCurrency(dayPL, currency)}`,
-                tag: dayPL != null ? { color: dayPL >= 0 ? Color.Green : Color.Red } : undefined,
-              },
-            ]
+        isPortfolio
+          ? listItem.units != null
+            ? [
+                ...accessories,
+                {
+                  text: `${listItem.units} shares · ${formatCurrency(positionValue, currency)}`,
+                },
+                {
+                  text: `Day: ${formatCurrency(dayPL, currency)}`,
+                  tag: dayPL != null ? { color: dayPL >= 0 ? Color.Green : Color.Red } : undefined,
+                },
+              ]
+            : [...accessories, { text: "— shares" }]
           : accessories
       }
       detail={
@@ -211,6 +217,14 @@ ${listItem.costBasis != null ? `- **Cost Basis:** ${formatCurrency(listItem.cost
             onAction={onToggleDetail}
             shortcut={{ modifiers: ["cmd"], key: "d" }}
           />
+          {isPortfolio && (
+            <Action.Push
+              title="Edit Position"
+              icon={Icon.Pencil}
+              shortcut={{ modifiers: ["cmd"], key: "e" }}
+              target={<EditPositionForm listItem={listItem} quote={quote} onSave={onEditPosition} />}
+            />
+          )}
           {canMoveUp && (
             <Action
               title="Move up"
