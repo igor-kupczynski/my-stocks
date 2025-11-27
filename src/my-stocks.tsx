@@ -165,6 +165,32 @@ export default function Command() {
     [lists],
   );
 
+  // Edit position for a stock
+  const handleEditPosition = useCallback(
+    async (listId: string, symbolIndex: number, units: number | undefined, costBasis: number | undefined) => {
+      const updatedLists = lists.map((list) => {
+        if (list.id !== listId) return list;
+
+        const newSymbols = [...list.symbols];
+        newSymbols[symbolIndex] = {
+          ...newSymbols[symbolIndex],
+          units,
+          costBasis,
+        };
+
+        return {
+          ...list,
+          symbols: newSymbols,
+          updatedAt: Date.now(),
+        };
+      });
+
+      setLists(updatedLists);
+      await saveLists(updatedLists);
+    },
+    [lists],
+  );
+
   // Remove stock from list
   const handleRemove = useCallback(
     async (listId: string, symbolIndex: number) => {
@@ -289,6 +315,7 @@ export default function Command() {
                   onMoveDown={() => handleMoveDown(list.id, index)}
                   onMoveToList={(targetListId: string) => handleMoveToList(list.id, index, targetListId)}
                   onRemove={() => handleRemove(list.id, index)}
+                  onEditPosition={(units, costBasis) => handleEditPosition(list.id, index, units, costBasis)}
                 />
               );
             })}

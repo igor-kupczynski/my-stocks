@@ -261,9 +261,21 @@ export const ActionPanel: ActionPanelType = Object.assign(
   },
 );
 
+interface ActionSubmitFormProps extends ActionProps {
+  onSubmit: () => void;
+  disabled?: boolean;
+}
+
+interface ActionPushProps extends ActionProps {
+  target: ReactNode;
+}
+
 type ActionType = ((props: ActionProps) => JSX.Element) & {
   OpenInBrowser: (props: ActionProps) => JSX.Element;
   CopyToClipboard: (props: ActionProps) => JSX.Element;
+  SubmitForm: (props: ActionSubmitFormProps) => JSX.Element;
+  Push: (props: ActionPushProps) => JSX.Element;
+  Open: (props: ActionProps) => JSX.Element;
   Style: {
     Default: string;
     Destructive: string;
@@ -282,6 +294,22 @@ export const Action: ActionType = Object.assign(
     ),
     CopyToClipboard: (props: ActionProps) => (
       <button data-testid="copy-to-clipboard" data-content={props.content}>
+        {props.title}
+      </button>
+    ),
+    SubmitForm: (props: ActionSubmitFormProps) => (
+      <button onClick={props.onSubmit} disabled={props.disabled} data-testid="submit-form">
+        {props.title}
+      </button>
+    ),
+    Push: (props: ActionPushProps) => (
+      <button onClick={props.onAction} data-testid="action-push">
+        {props.title}
+        {props.target}
+      </button>
+    ),
+    Open: (props: ActionProps) => (
+      <button onClick={props.onAction} data-testid="action-open">
         {props.title}
       </button>
     ),
@@ -306,6 +334,8 @@ export const Icon = {
   ArrowDown: "icon-arrow-down",
   List: "icon-list",
   Trash: "icon-trash",
+  Pencil: "icon-pencil",
+  Plus: "icon-plus",
 };
 
 export const Color = {
@@ -324,3 +354,80 @@ export const Alert = {
 };
 
 export const confirmAlert = vi.fn(async () => true);
+
+// Navigation mock
+export const useNavigation = vi.fn(() => ({
+  push: vi.fn(),
+  pop: vi.fn(),
+}));
+
+// Form components
+interface FormProps {
+  actions?: ReactNode;
+  children?: ReactNode;
+}
+
+interface FormTextFieldProps {
+  id: string;
+  title: string;
+  placeholder?: string;
+  info?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  error?: string;
+}
+
+interface FormDescriptionProps {
+  title?: string;
+  text?: string;
+}
+
+type FormSeparatorProps = Record<string, never>;
+
+type FormType = ((props: FormProps) => JSX.Element) & {
+  TextField: (props: FormTextFieldProps) => JSX.Element;
+  Description: (props: FormDescriptionProps) => JSX.Element;
+  Separator: (props: FormSeparatorProps) => JSX.Element;
+};
+
+export const Form: FormType = Object.assign(
+  (props: FormProps) => {
+    return (
+      <form data-testid="form">
+        {props.children}
+        {props.actions}
+      </form>
+    );
+  },
+  {
+    TextField: (props: FormTextFieldProps) => {
+      return (
+        <div data-testid="form-textfield">
+          <label htmlFor={props.id}>{props.title}</label>
+          <input
+            type="text"
+            id={props.id}
+            name={props.id}
+            placeholder={props.placeholder}
+            value={props.value}
+            onChange={(e) => props.onChange?.(e.target.value)}
+            aria-label={props.title}
+          />
+          {props.info && <span data-testid="field-info">{props.info}</span>}
+          {props.error && <span data-testid="field-error">{props.error}</span>}
+        </div>
+      );
+    },
+    Description: (props: FormDescriptionProps) => {
+      return (
+        <div data-testid="form-description">
+          {props.title && <strong>{props.title}</strong>}
+          {props.text && <p>{props.text}</p>}
+        </div>
+      );
+    },
+    Separator: () => {
+      return <hr data-testid="form-separator" />;
+    },
+  },
+);
