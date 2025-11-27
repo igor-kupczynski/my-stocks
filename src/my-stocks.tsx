@@ -1,114 +1,66 @@
-import { ActionPanel, Action, Icon, List, Color, getPreferenceValues } from "@raycast/api";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { parseSymbols } from "./utils/symbols";
-import { getQuotes, Quote, QuoteResult } from "./data/quotes";
+import { ActionPanel, Action, Icon, List, Color, confirmAlert, Alert } from "@raycast/api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getQuotes, Quote } from "./data/quotes";
 import { startRefresher } from "./utils/refresher";
-
-type Preferences = {
-  stockSymbols?: string;
-};
-
-function formatNumber(value: number | undefined, decimals = 2): string {
-  if (value == null) return "—";
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
-}
-
-function formatCurrency(value: number | undefined, currency = "USD"): string {
-  if (value == null) return "—";
-  return value.toLocaleString("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
-function formatLargeNumber(value: number | undefined): string {
-  if (value == null) return "—";
-  if (value >= 1e12) return `${(value / 1e12).toFixed(2)}T`;
-  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
-  if (value >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
-  return value.toFixed(0);
-}
-
-function formatPercentChange(percent?: number): string {
-  if (percent == null) return "";
-  const sign = percent >= 0 ? "+" : "";
-  return `${sign}${percent.toFixed(2)}%`;
-}
-
-function getPerformanceIndicator(change?: number): { icon: Icon; tintColor: Color } {
-  if (change == null) return { icon: Icon.Minus, tintColor: Color.SecondaryText };
-  if (change > 0) return { icon: Icon.ArrowUpCircleFilled, tintColor: Color.Green };
-  if (change < 0) return { icon: Icon.ArrowDownCircleFilled, tintColor: Color.Red };
-  return { icon: Icon.MinusCircle, tintColor: Color.SecondaryText };
-}
-
-function formatMarketTime(date?: Date): string {
-  if (!date) return "—";
-  return date.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function StockDetail({ data }: { data: Quote }) {
-  const currency = data.currency ?? "USD";
-
-  return (
-    <List.Item.Detail
-      metadata={
-        <List.Item.Detail.Metadata>
-          <List.Item.Detail.Metadata.Label title="As of" text={formatMarketTime(data.regularMarketTime)} />
-          <List.Item.Detail.Metadata.Separator />
-          <List.Item.Detail.Metadata.Label title="Open" text={formatCurrency(data.regularMarketOpen, currency)} />
-          <List.Item.Detail.Metadata.Label title="High" text={formatCurrency(data.regularMarketDayHigh, currency)} />
-          <List.Item.Detail.Metadata.Label title="Low" text={formatCurrency(data.regularMarketDayLow, currency)} />
-          <List.Item.Detail.Metadata.Label
-            title="Close"
-            text={formatCurrency(data.regularMarketPreviousClose, currency)}
-          />
-          <List.Item.Detail.Metadata.Separator />
-          <List.Item.Detail.Metadata.Label title="52W High" text={formatCurrency(data.fiftyTwoWeekHigh, currency)} />
-          <List.Item.Detail.Metadata.Label title="52W Low" text={formatCurrency(data.fiftyTwoWeekLow, currency)} />
-          <List.Item.Detail.Metadata.Separator />
-          <List.Item.Detail.Metadata.Label title="Volume" text={formatLargeNumber(data.regularMarketVolume)} />
-          <List.Item.Detail.Metadata.Label title="Mkt Cap" text={formatLargeNumber(data.marketCap)} />
-        </List.Item.Detail.Metadata>
-      }
-    />
-  );
-}
+import { loadLists, saveLists } from "./data/lists";
+import type { StockList, ListItem } from "./types";
+import { ListSection } from "./components/ListSection";
+import { StockItem } from "./components/StockItem";
 
 export default function Command() {
-  const preferences = getPreferenceValues<Preferences>();
-  const symbols = useMemo(() => parseSymbols(preferences.stockSymbols), [preferences.stockSymbols]);
-  const [items, setItems] = useState<QuoteResult[]>([]);
+  const [lists, setLists] = useState<StockList[]>([]);
+  const [quotes, setQuotes] = useState<Map<string, Quote>>(new Map());
   const [loading, setLoading] = useState<boolean>(true);
   const [showDetail, setShowDetail] = useState<boolean>(false);
   const mounted = useRef(true);
 
   const refresh = useCallback(async () => {
     if (!mounted.current) return;
-    if (symbols.length === 0) {
-      setItems([]);
-      setLoading(false);
-      return;
-    }
+
     try {
-      const results = await getQuotes(symbols);
+      // Load lists from LocalStorage
+      const loadedLists = await loadLists();
       if (!mounted.current) return;
-      setItems(results);
+      setLists(loadedLists);
+
+      // Extract all unique symbols from all lists
+      const allSymbols = new Set<string>();
+      for (const list of loadedLists) {
+        for (const item of list.symbols) {
+          allSymbols.add(item.symbol);
+        }
+      }
+
+      if (allSymbols.size === 0) {
+        setQuotes(new Map());
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const results = await getQuotes(Array.from(allSymbols));
+        if (!mounted.current) return;
+
+        // Build quote map (only successful quotes)
+        const quoteMap = new Map<string, Quote>();
+        for (const result of results) {
+          if (result.ok) {
+            quoteMap.set(result.data.symbol, result.data);
+          }
+        }
+        setQuotes(quoteMap);
+      } catch (error) {
+        // Log error but don't crash - quotes will remain stale
+        console.error("Failed to fetch quotes:", error);
+        // Keep existing quotes on error to maintain stale data
+      }
+    } catch (error) {
+      // Handle LocalStorage or list loading errors
+      console.error("Failed to load lists:", error);
     } finally {
       if (mounted.current) setLoading(false);
     }
-  }, [symbols]);
+  }, []);
 
   useEffect(() => {
     mounted.current = true;
@@ -117,88 +69,199 @@ export default function Command() {
     }, 60_000);
     return () => {
       mounted.current = false;
-      dispose();
+      try {
+        dispose();
+      } catch (error) {
+        console.error("Failed to dispose refresher:", error);
+      }
     };
   }, [refresh]);
 
   const toggleDetail = useCallback(() => setShowDetail((prev) => !prev), []);
 
+  // Move stock up in list
+  const handleMoveUp = useCallback(
+    async (listId: string, symbolIndex: number) => {
+      if (symbolIndex === 0) return;
+
+      const updatedLists = lists.map((list) => {
+        if (list.id !== listId) return list;
+
+        const newSymbols = [...list.symbols];
+        [newSymbols[symbolIndex - 1], newSymbols[symbolIndex]] = [newSymbols[symbolIndex], newSymbols[symbolIndex - 1]];
+
+        return {
+          ...list,
+          symbols: newSymbols,
+          updatedAt: Date.now(),
+        };
+      });
+
+      setLists(updatedLists);
+      await saveLists(updatedLists);
+    },
+    [lists],
+  );
+
+  // Move stock down in list
+  const handleMoveDown = useCallback(
+    async (listId: string, symbolIndex: number) => {
+      const list = lists.find((l) => l.id === listId);
+      if (!list || symbolIndex === list.symbols.length - 1) return;
+
+      const updatedLists = lists.map((l) => {
+        if (l.id !== listId) return l;
+
+        const newSymbols = [...l.symbols];
+        [newSymbols[symbolIndex], newSymbols[symbolIndex + 1]] = [newSymbols[symbolIndex + 1], newSymbols[symbolIndex]];
+
+        return {
+          ...l,
+          symbols: newSymbols,
+          updatedAt: Date.now(),
+        };
+      });
+
+      setLists(updatedLists);
+      await saveLists(updatedLists);
+    },
+    [lists],
+  );
+
+  // Move stock to another list
+  const handleMoveToList = useCallback(
+    async (sourceListId: string, symbolIndex: number, targetListId: string) => {
+      const sourceList = lists.find((l) => l.id === sourceListId);
+      if (!sourceList || targetListId === sourceListId) return;
+
+      const listItem = sourceList.symbols[symbolIndex];
+
+      const updatedLists = lists.map((list) => {
+        if (list.id === sourceListId) {
+          // Remove from source list
+          return {
+            ...list,
+            symbols: list.symbols.filter((_, i) => i !== symbolIndex),
+            updatedAt: Date.now(),
+          };
+        }
+        if (list.id === targetListId) {
+          // Add to target list (preserve position data if both are portfolios)
+          const itemToAdd: ListItem =
+            sourceList.isPortfolio && list.isPortfolio ? listItem : { symbol: listItem.symbol }; // Drop position data if moving to watchlist
+
+          return {
+            ...list,
+            symbols: [...list.symbols, itemToAdd],
+            updatedAt: Date.now(),
+          };
+        }
+        return list;
+      });
+
+      setLists(updatedLists);
+      await saveLists(updatedLists);
+    },
+    [lists],
+  );
+
+  // Remove stock from list
+  const handleRemove = useCallback(
+    async (listId: string, symbolIndex: number) => {
+      const list = lists.find((l) => l.id === listId);
+      if (!list) return;
+
+      const confirmed = await confirmAlert({
+        title: "Remove Stock",
+        message: `Remove ${list.symbols[symbolIndex].symbol} from ${list.name}?`,
+        primaryAction: {
+          title: "Remove",
+          style: Alert.ActionStyle.Destructive,
+        },
+      });
+
+      if (!confirmed) return;
+
+      const updatedLists = lists.map((l) => {
+        if (l.id !== listId) return l;
+
+        return {
+          ...l,
+          symbols: l.symbols.filter((_, i) => i !== symbolIndex),
+          updatedAt: Date.now(),
+        };
+      });
+
+      setLists(updatedLists);
+      await saveLists(updatedLists);
+    },
+    [lists],
+  );
+
+  const totalStocks = lists.reduce((sum, list) => sum + list.symbols.length, 0);
+
   return (
-    <List isLoading={loading} isShowingDetail={showDetail} searchBarPlaceholder="Filter symbols...">
-      {symbols.length === 0 && !loading ? (
+    <List isLoading={loading} isShowingDetail={showDetail} searchBarPlaceholder="Filter stocks...">
+      {totalStocks === 0 && !loading ? (
         <List.EmptyView
           icon={Icon.BarChart}
-          title="No stocks configured"
-          description="Set a comma-separated list of stock symbols in the command preferences."
+          title="No stocks in your lists"
+          description="Use the Manage Lists command to create lists and add stocks."
         />
       ) : (
-        items.map((item) => {
-          if (!item.ok) {
-            return (
-              <List.Item
-                key={item.symbol}
-                icon={{ source: Icon.ExclamationMark, tintColor: Color.Red }}
-                title={item.symbol}
-                subtitle={item.error}
-                detail={<List.Item.Detail markdown={`# ${item.symbol}\n\n⚠️ **Error**: ${item.error}`} />}
-                actions={
-                  <ActionPanel>
-                    <Action.OpenInBrowser
-                      title="Open in Yahoo Finance"
-                      url={`https://finance.yahoo.com/quote/${encodeURIComponent(item.symbol)}`}
-                    />
-                    <Action
-                      title={showDetail ? "Hide Details" : "Show Details"}
-                      icon={Icon.Sidebar}
-                      onAction={toggleDetail}
-                      shortcut={{ modifiers: ["cmd"], key: "d" }}
-                    />
-                    <Action.CopyToClipboard title="Copy Symbol" content={item.symbol} />
-                  </ActionPanel>
-                }
-              />
-            );
-          }
-          const { data } = item;
-          const price = data.regularMarketPrice;
-          const ch = data.regularMarketChange;
-          const chp = data.regularMarketChangePercent;
-          const { icon, tintColor } = getPerformanceIndicator(ch);
+        lists.map((list) => (
+          <ListSection key={list.id} list={list} quotes={quotes}>
+            {list.symbols.map((listItem, index) => {
+              const quote = quotes.get(listItem.symbol);
 
-          return (
-            <List.Item
-              key={data.symbol}
-              icon={{ source: icon, tintColor }}
-              title={data.symbol}
-              subtitle={data.shortName ?? ""}
-              accessories={[
-                { text: price != null ? `$${formatNumber(price)}` : "—" },
-                { tag: { value: formatPercentChange(chp), color: tintColor } },
-              ]}
-              detail={<StockDetail data={data} />}
-              actions={
-                <ActionPanel>
-                  <Action.OpenInBrowser
-                    title="Open in Yahoo Finance"
-                    url={`https://finance.yahoo.com/quote/${encodeURIComponent(data.symbol)}`}
+              // Handle missing quote (error case)
+              if (!quote) {
+                return (
+                  <List.Item
+                    key={`${list.id}-${listItem.symbol}`}
+                    icon={{ source: Icon.ExclamationMark, tintColor: Color.Red }}
+                    title={listItem.symbol}
+                    subtitle="Failed to load quote"
+                    actions={
+                      <ActionPanel>
+                        <Action.OpenInBrowser
+                          title="Open in Yahoo Finance"
+                          url={`https://finance.yahoo.com/quote/${encodeURIComponent(listItem.symbol)}`}
+                        />
+                        <Action
+                          title="Remove from List"
+                          icon={Icon.Trash}
+                          style={Action.Style.Destructive}
+                          onAction={() => handleRemove(list.id, index)}
+                          shortcut={{ modifiers: ["cmd"], key: "backspace" }}
+                        />
+                      </ActionPanel>
+                    }
                   />
-                  <Action
-                    title={showDetail ? "Hide Details" : "Show Details"}
-                    icon={Icon.Sidebar}
-                    onAction={toggleDetail}
-                    shortcut={{ modifiers: ["cmd"], key: "d" }}
-                  />
-                  <Action.CopyToClipboard title="Copy Symbol" content={data.symbol} />
-                  <Action.CopyToClipboard
-                    title="Copy Price"
-                    content={price != null ? price.toFixed(2) : ""}
-                    shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
-                  />
-                </ActionPanel>
+                );
               }
-            />
-          );
-        })
+
+              return (
+                <StockItem
+                  key={`${list.id}-${listItem.symbol}`}
+                  listItem={listItem}
+                  quote={quote}
+                  isPortfolio={list.isPortfolio}
+                  showDetail={showDetail}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < list.symbols.length - 1}
+                  availableLists={lists.map((l) => ({ id: l.id, name: l.name, icon: l.icon }))}
+                  currentListId={list.id}
+                  onToggleDetail={toggleDetail}
+                  onMoveUp={() => handleMoveUp(list.id, index)}
+                  onMoveDown={() => handleMoveDown(list.id, index)}
+                  onMoveToList={(targetListId: string) => handleMoveToList(list.id, index, targetListId)}
+                  onRemove={() => handleRemove(list.id, index)}
+                />
+              );
+            })}
+          </ListSection>
+        ))
       )}
     </List>
   );
