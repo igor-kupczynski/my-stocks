@@ -31,6 +31,12 @@
           "default": "AAPL, GOOGL, MSFT, TSLA"
         }
       ]
+    },
+    {
+      "name": "manage-lists",
+      "title": "Manage Lists",
+      "description": "Create, edit, reorder, and delete stock lists",
+      "mode": "view"
     }
   ],
   "dependencies": {
