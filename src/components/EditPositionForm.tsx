@@ -50,16 +50,24 @@ export function EditPositionForm({ listItem, quote, onSave }: EditPositionFormPr
 
   // Validate on change
   useEffect(() => {
-    if (unitsValue.trim() !== "" && (isNaN(units!) || units! < 0)) {
-      setUnitsError("Must be a positive number");
+    if (unitsValue.trim() !== "") {
+      if (units === undefined || isNaN(units) || units < 0) {
+        setUnitsError("Must be a positive number");
+      } else {
+        setUnitsError(undefined);
+      }
     } else {
       setUnitsError(undefined);
     }
   }, [unitsValue, units]);
 
   useEffect(() => {
-    if (costBasisValue.trim() !== "" && (isNaN(costBasis!) || costBasis! < 0)) {
-      setCostBasisError("Must be a positive number");
+    if (costBasisValue.trim() !== "") {
+      if (costBasis === undefined || isNaN(costBasis) || costBasis < 0) {
+        setCostBasisError("Must be a positive number");
+      } else {
+        setCostBasisError(undefined);
+      }
     } else {
       setCostBasisError(undefined);
     }

@@ -105,13 +105,31 @@ export function StockItem({
       : undefined;
 
   // Build accessories based on mode
-  const accessories: List.Item.Accessory[] = [];
+  const buildAccessories = (): List.Item.Accessory[] => {
+    const baseAccessories: List.Item.Accessory[] = [
+      { text: price != null ? `$${formatNumber(price)}` : "—" },
+      { tag: { value: formatPercentChange(changePercent), color: tintColor } },
+    ];
 
-  // Main price and change accessories
-  accessories.push(
-    { text: price != null ? `$${formatNumber(price)}` : "—" },
-    { tag: { value: formatPercentChange(changePercent), color: tintColor } },
-  );
+    if (!isPortfolio) {
+      return baseAccessories;
+    }
+
+    if (listItem.units == null) {
+      return [...baseAccessories, { text: "— shares" }];
+    }
+
+    return [
+      ...baseAccessories,
+      {
+        text: `${listItem.units} shares · ${formatCurrency(positionValue, currency)}`,
+      },
+      {
+        text: `Day: ${formatCurrency(dayPL, currency)}`,
+        tag: dayPL != null ? { color: dayPL >= 0 ? Color.Green : Color.Red } : undefined,
+      },
+    ];
+  };
 
   // Subtitle for portfolio mode
   const subtitle = quote.shortName ?? "";
@@ -145,22 +163,7 @@ ${unrealizedPL != null && unrealizedPLPercent != null ? `- **Unrealized P&L:** $
       icon={{ source: icon, tintColor }}
       title={quote.symbol}
       subtitle={subtitle}
-      accessories={
-        isPortfolio
-          ? listItem.units != null
-            ? [
-                ...accessories,
-                {
-                  text: `${listItem.units} shares · ${formatCurrency(positionValue, currency)}`,
-                },
-                {
-                  text: `Day: ${formatCurrency(dayPL, currency)}`,
-                  tag: dayPL != null ? { color: dayPL >= 0 ? Color.Green : Color.Red } : undefined,
-                },
-              ]
-            : [...accessories, { text: "— shares" }]
-          : accessories
-      }
+      accessories={buildAccessories()}
       detail={
         showDetail ? (
           detailMarkdown ? (
