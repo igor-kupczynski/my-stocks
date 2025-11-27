@@ -33,6 +33,12 @@
       ]
     },
     {
+      "name": "add-stock",
+      "title": "Add Stock",
+      "description": "Search for stocks and add them to your lists",
+      "mode": "view"
+    },
+    {
       "name": "manage-lists",
       "title": "Manage Lists",
       "description": "Create, edit, reorder, and delete stock lists",
