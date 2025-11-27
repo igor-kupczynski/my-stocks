@@ -93,10 +93,12 @@ export function StockItem({
   const { icon, tintColor } = getPerformanceIndicator(change);
 
   // Portfolio-specific calculations
-  const positionValue = isPortfolio && listItem.units && price != null ? listItem.units * price : undefined;
-  const dayPL = isPortfolio && listItem.units && change != null && price != null ? listItem.units * change : undefined;
+  const positionValue =
+    isPortfolio && listItem.units != null && price != null ? listItem.units * price : undefined;
+  const dayPL =
+    isPortfolio && listItem.units != null && change != null && price != null ? listItem.units * change : undefined;
   const unrealizedPL =
-    isPortfolio && listItem.units && listItem.costBasis != null && positionValue != null
+    isPortfolio && listItem.units != null && listItem.costBasis != null && positionValue != null
       ? positionValue - listItem.costBasis
       : undefined;
   const unrealizedPLPercent =

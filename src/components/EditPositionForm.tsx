@@ -75,7 +75,7 @@ export function EditPositionForm({ listItem, quote, onSave }: EditPositionFormPr
 
   const handleSubmit = () => {
     // If units is 0 or empty, clear both values to remove position data
-    const finalUnits = units === 0 || units == null ? undefined : units;
+    const finalUnits = units === 0 || units === undefined ? undefined : units;
     const finalCostBasis = finalUnits === undefined ? undefined : costBasis;
 
     onSave(finalUnits, finalCostBasis);
